@@ -3,7 +3,7 @@ Tool to plot the roots of randomly generated Littlewood polynomials
 
 ## Building
 ### Dependencies
-You should install the build tool CMake, as well as the library GSL.
+You should install the build tool CMake, as well as the libraries GSL and MPSolve.
 
 ### Build steps
 Then execute the following commands from the top-level project directory:
