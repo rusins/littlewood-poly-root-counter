@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 
 project("Littlewood Poly Root Plotter" VERSION 1.0.0)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
 add_executable(LPRP src/main.cpp)
 
 # GSL and MPSolve are the 2 main libraries we use for solving polynomials
