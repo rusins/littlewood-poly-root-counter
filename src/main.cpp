@@ -9,7 +9,7 @@
 using namespace std;
 
 int main (int argc, char **argv) {
-    int degree = argc - 2;
+  int degree = argc - 2;
   if (degree <= 0) {
 	cerr << "Enter the coefficients for the polynomial to solve!" << endl;
 	return -1;
@@ -43,48 +43,35 @@ int main (int argc, char **argv) {
 
 
   cout << endl << "MPSolve --------" << endl;
-  mps_monomial_poly *p;
-  mps_context *s;
-  
-  mpq_t one, m_one, zero;
+  mps_context *s = mps_context_new();
+  mps_monomial_poly *p = mps_monomial_poly_new(s, degree);
 
-  mpq_init (one);
-  mpq_init (m_one);
-  mpq_init (zero);
+  mps_context_select_algorithm(s, MPS_ALGORITHM_STANDARD_MPSOLVE);
 
-  mpq_set_si (one, 1, 1);
-  mpq_set_si (m_one, -1, 1);
-  mpq_set_si (zero, 0, 1);
-
-  int n = 5;
-  s = mps_context_new ();
-  p = mps_monomial_poly_new (s, n);
-
-  mps_context_select_algorithm(s, MPS_ALGORITHM_SECULAR_GA);
-
-  mps_monomial_poly_set_coefficient_d (s, p, 0, 1, 0); 
-  mps_monomial_poly_set_coefficient_d (s, p, n, -1, 0); 
+  for (int i = 0; i < degree + 1; ++i)
+	mps_monomial_poly_set_coefficient_d (s, p, i, coefficients[i], 0); 
 
   /* Set the input polynomial */
-  mps_context_set_input_poly (s, MPS_POLYNOMIAL (p));
+  mps_context_set_input_poly(s, MPS_POLYNOMIAL(p));
 
   /* Allocate space to hold the results. We check only floating point results
    * in here */
-  cplx_t *results = cplx_valloc (n);
+  cplx_t *results = cplx_valloc(degree);
 
   /* Actually solve the polynomial */
-  mps_mpsolve (s);
+  mps_mpsolve(s);
 
   /* Save roots computed in the vector results */
-  mps_context_get_roots_d (s, &results, NULL);
+  mps_context_get_roots_d(s, &results, NULL);
 
   /* Print out roots */
-  for (int i = 0; i < n; i++)
-    {
-      cplx_out_str (stdout, results[i]);
-      printf ("\n");
-    }
+  for (int i = 0; i < degree; i++) {
+	cout << cplx_Re(results[i]) << " + " << cplx_Im(results[i]) << "i" << endl;
+	//	cplx_out_str (stdout, results[i]);
+	//	printf ("\n");
+  }
 
-  free (results);
+  // Free memory
+  free(results);
   return 0;
 }

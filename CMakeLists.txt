@@ -10,6 +10,6 @@ find_package(GSL REQUIRED) # GNU Scientific Library
 find_package(Threads REQUIRED) # Required by MPSolve
 
 target_link_libraries(LPRP GSL::gsl)
-target_link_libraries(LPRP ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(LPRP ${CMAKE_THREAD_LIBS_INIT}) # Required by MPSolve
 target_link_libraries(LPRP gmp) # Required by MPSolve
 target_link_libraries(LPRP mps) # MPSolve
