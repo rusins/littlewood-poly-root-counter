@@ -1,4 +1,3 @@
-#include <gsl/gsl_poly.h>
 #include <gsl/gsl_complex.h>
 
 #include <mps/mps.h>
@@ -26,16 +25,16 @@ aberth_method::aberth_method(int degree): degree(degree) {
 }
 
 aberth_method::~aberth_method() {
-  free(context);
-  free(poly);
+  mps_monomial_poly_free(context, MPS_POLYNOMIAL(poly));
+  mps_context_free(context);
   free(results);
-  delete(roots);
+  delete roots;
 }
 
 // Uses the Aberth method to find roots of the supplied polynomial.
 // coefficients array is from smallest power to largest
 // The coefficient array should have size degree + 1
-// Returns array of roots of size degree
+// Returns array of roots of size degree, which gets deleted on deconstruction
 gsl_complex *aberth_method::solve(double *coefficients) {
   // Set the coefficients
   for (int i = 0; i < degree + 1; ++i)

@@ -1,6 +1,8 @@
 #include <gsl/gsl_poly.h>
 #include <gsl/gsl_complex.h>
 
+using namespace std;
+
 class qr_algorithm {
 public:
   qr_algorithm(int degree);
@@ -20,14 +22,16 @@ qr_algorithm::qr_algorithm(int degree): degree(degree) {
 
 qr_algorithm::~qr_algorithm() {
   gsl_poly_complex_workspace_free(workspace);
-  delete(roots);
+  delete roots;
 }
 
 // Uses the QR algorithm to find roots of the supplied polynomial.
 // coefficients array is from smallest power to largest
 // The coefficient array should have size degree + 1
-// Returns array of roots of size degree
+// Returns array of roots of size degree, which gets deleted on deconstruction
 gsl_complex *qr_algorithm::solve(double *coefficients) {
-  gsl_poly_complex_solve(coefficients, degree + 1, workspace, (double*) roots);
+  int res = gsl_poly_complex_solve(coefficients, degree + 1, workspace, (double*) roots);
+  //  if (res == GSL_FAILED)
+  //	cerr << "QR reduction didn't converge!" << endl;
   return roots;
 }

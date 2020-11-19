@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
   cout << endl << "MPSolve --------" << endl;
 
 
+  // TODO: wrap in try block in case OOM
   aberth_method ab(degree);
   roots = ab.solve(coefficients);
   

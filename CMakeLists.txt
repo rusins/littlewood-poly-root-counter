@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project("Littlewood Poly Root Plotter" VERSION 1.0.0)
 
-add_executable(LPRP src/main.cpp)
+add_executable(LPRP src/match_tester.cpp)
 
 # GSL and MPSolve are the 2 main libraries we use for solving polynomials
 
