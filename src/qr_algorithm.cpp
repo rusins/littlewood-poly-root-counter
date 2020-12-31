@@ -1,9 +1,13 @@
+#pragma once
+
 #include <gsl/gsl_poly.h>
 #include <gsl/gsl_complex.h>
 
+#include "poly_solver.cpp"
+
 using namespace std;
 
-class qr_algorithm {
+class qr_algorithm : public poly_solver {
 public:
   qr_algorithm(int degree);
   gsl_complex *solve(double *coefficients);
@@ -15,7 +19,12 @@ private:
   gsl_complex *roots;
 };
 
-qr_algorithm::qr_algorithm(int degree): degree(degree) {
+
+
+
+
+
+qr_algorithm::qr_algorithm(int degree_param): degree(degree_param) {
   workspace = gsl_poly_complex_workspace_alloc(degree + 1);
   roots = new gsl_complex[degree];
 }

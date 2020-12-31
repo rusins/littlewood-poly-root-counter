@@ -1,8 +1,11 @@
-#include <gsl/gsl_complex.h>
+#pragma once
 
+#include <gsl/gsl_complex.h>
 #include <mps/mps.h>
 
-class aberth_method {
+#include "poly_solver.cpp"
+
+class aberth_method : public poly_solver {
 public:
   aberth_method(int degree);
   gsl_complex *solve(double *coefficients);
@@ -16,7 +19,12 @@ private:
   gsl_complex *roots;
 };
 
-aberth_method::aberth_method(int degree): degree(degree) {
+
+
+
+
+
+aberth_method::aberth_method(int degree_param): degree(degree_param) {
   context = mps_context_new();
   poly = mps_monomial_poly_new(context, degree);
   mps_context_select_algorithm(context, MPS_ALGORITHM_STANDARD_MPSOLVE);
@@ -38,7 +46,7 @@ aberth_method::~aberth_method() {
 gsl_complex *aberth_method::solve(double *coefficients) {
   // Set the coefficients
   for (int i = 0; i < degree + 1; ++i)
-	mps_monomial_poly_set_coefficient_d (context, poly, i, coefficients[i], 0);
+	mps_monomial_poly_set_coefficient_d(context, poly, i, coefficients[i], 0);
 
   // Set the input polynomial
   mps_context_set_input_poly(context, MPS_POLYNOMIAL(poly));

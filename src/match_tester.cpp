@@ -1,7 +1,6 @@
 #include <bits/stdc++.h>
 #include <gsl/gsl_complex.h>
 
-
 #include "qr_algorithm.cpp"
 #include "aberth_method.cpp"
 
