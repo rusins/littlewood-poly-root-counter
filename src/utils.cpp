@@ -51,20 +51,19 @@ struct graph {
 };
 
 
-
 // Matches the roots outputted by both algorithms and builds a graph.
 // @param n is the length of the passed arrays.
 // @return array of vector of edges that makes up the graph, of length n*2.
 // roots_a maps to nodes with even numbers, roots_b maps to nodes with odd numbers.
-graph build_graph(gsl_complex *roots_a, gsl_complex *roots_b, int n) {
-
+graph build_graph(vector<gsl_complex> roots_a, vector<gsl_complex> roots_b) {
+  int n = roots_a.size();
   graph g(2*n);
   // TODO: Instead of sorting in only 1 direction, we can sort in both directions
   // to avoid congestion where the roots crowd at the vertical parts of the unit circle.
   
   // Sort roots
-  sort(roots_a, roots_a + n, gsl_complex_ops::compare_real);
-  sort(roots_b, roots_b + n, gsl_complex_ops::compare_real);
+  sort(roots_a.begin(), roots_a.end(), gsl_complex_ops::compare_real);
+  sort(roots_b.begin(), roots_b.end(), gsl_complex_ops::compare_real);
 
   // a roots will be x2, and b nodes x2 + 1 in the graph
   for (int i = 0; i < n; ++i) {
@@ -75,8 +74,10 @@ graph build_graph(gsl_complex *roots_a, gsl_complex *roots_b, int n) {
   // 2 pointer iteration through the arrays.
   // Worst case O(n^2), but should be closer to O(n) in practice
   int a = 0;
+  double max_dist = 0.0;
   for (int b = 0; a < n && b < n; ++b) {
 	const double real_b = GSL_REAL(roots_b[b]);
+	double min_dist = 20.0;
 	
 	for (int aa = a; aa < n; ++aa) {
 	  const double real_a = GSL_REAL(roots_a[aa]);
@@ -87,6 +88,8 @@ graph build_graph(gsl_complex *roots_a, gsl_complex *roots_b, int n) {
 	  } else {
 		const double dist = gsl_complex_ops::distance(roots_a[aa], roots_b[b]);
 		if (dist <= ETA) {
+		  if (dist < min_dist)
+			min_dist = dist;
 		  // Add edge to graph
 		  const int a_node = aa * 2;
 		  const int b_node = b * 2 + 1;
@@ -95,7 +98,12 @@ graph build_graph(gsl_complex *roots_a, gsl_complex *roots_b, int n) {
 		}
 	  }
 	}
+	if (min_dist > max_dist)
+	  max_dist = min_dist;	
   }
+
+  if (max_dist > 0.001)
+	cout << max_dist << endl;
 
   return g;
 }
@@ -119,31 +127,15 @@ public:
 
 
 
-
-
 // Finds a pairing between the roots from a graph.
 // @throws non_matching_roots_exception if a pairing does not exist!
-point_pairs find_pairs(graph &g) {
-  //  cout << "\n\n";
-  int n = g.values.size();
-  point_pairs pairs(n / 2);
-  
-  bool visited[n] = {true};
-  cout << "visited\n" ;
-  for (int i = 0; i < n; ++i)
-	cout << "v: " << visited[i] << "\n";
+point_pairs find_pairs(graph &g, int n, vector<bool> visited, vector<int> edge_count) {
+  point_pairs pairs;
 
   // Step 1 – cut all the leaves
-  int edge_count[n]; // number of active edges each node has. Used for efficient leaf cutting.
   stack<int> leaves;
   for (int i = 0; i < n; ++i) {
-	//visited[i] = 0;
-	edge_count[i] = g.edges[i].size();
-	if (edge_count[i] == 0) {
-	  cout << "back to the drawing board" << endl;
-	  throw non_matching_roots_exception(g);
-	}
-	else if (edge_count[i] == 1)
+	if (edge_count[i] == 1)
 	  leaves.push(i);
   }
 
@@ -174,8 +166,6 @@ point_pairs find_pairs(graph &g) {
 	// Update state
 	visited[node] = true;
 	visited[other] = true;
-	//	cout << "leaf "<< node << "\n";
-	//	cout << "leaf "<< other << "\n";
 	--edge_count[other];
 	for (int adj : g.edges[other]) {
 	  --edge_count[adj];
@@ -186,65 +176,58 @@ point_pairs find_pairs(graph &g) {
 	// nodes are already visited
 
 	if (node % 2 == 1)
-	  swap(node, other);
-	pairs.push_back(make_pair(g.values[node], g.values[other]));	
+	  swap(node, other); 
+	pairs.push_back(make_pair(g.values[node], g.values[other]));
   }
 
   // Step 2 – brute force all the remaining connected graphs.
-  int maxcount = 0;
-  for (int i = 0; i < n; ++i) {
-	if (visited[i])
+  for (int node = 0; node < n; ++node) {
+	if (visited[node])
 	  continue;
-	if (edge_count[i] == 0) {
+	visited[node] = true;
+	if (edge_count[node] == 0) {
 	  cout << "ugh oh" << endl;
 	  throw non_matching_roots_exception(g);
 	}
-
-	stack<int> nodes;
-	stack<int> k;
-	nodes.push(i);
-	k.push(i);
-	int count = 0;
-	while (!nodes.empty()) {
-	  int node = nodes.top();
-	  nodes.pop();
-	  if (visited[node])
-		continue;
-	  visited[node] = true;
-
-	  count++;
-
-	  for (int next: g.edges[node]) {
-		if (!visited[next]) {
-		  nodes.push(next);
-		  k.push(next);
-		}
-	  }
-	}
-	if (count % 2 == 1) {
-	  cout << "bad: " << count << endl;
-	  cout << "i: "<< i << endl;
-	  while (!k.empty()) {
-		int kk = k.top();
-		k.pop();
-		cout << GSL_REAL(g.values[kk]) << " " << GSL_IMAG(g.values[kk]) << " " << kk << "\n";
-	  }
-	  throw non_matching_roots_exception(g);
-	}
-	if (count > maxcount)
-	  maxcount = count;
+	
 	// have node
 	// find all nodes unvisited
-	// for each node run func:
-	// func picks a random edge, then finds all leaves, and pairs them up and keeps note
-	// func then gathers all adjacent nodes unvisited
-	// func then runs itself on one of the non leaf nodes. If fail, then revert visisted state the function did and fail upwards
-	// if not fail, then keep going through unvisited adj. nodes and running the function
-	//
-	// this is actually similar to what we already did, so should do a clever refactor :D
+	for (int other: g.edges[node]) {
+	  if (visited[other]) continue;
+	  visited[other] = true;
+	  vector<int> new_edge_count = edge_count;
+	  for (int adj: g.edges[node])
+		new_edge_count[adj]--;
+	  for (int adj: g.edges[other])
+		new_edge_count[adj]--;
+	  try {
+		point_pairs result = find_pairs(g, n, visited, new_edge_count);
+		result.insert(result.end(), pairs.begin(), pairs.end());
+		return result;
+	  } catch (non_matching_roots_exception &e) {
+		visited[other] = false;
+		continue; // This wasn't it chief
+	  }
+	}
+	cout << "Failed to create a graph by matching root " << node << endl;
+	throw new non_matching_roots_exception(g);
   }
-  if (maxcount > 0)
-	cout << "count: "<< maxcount << endl;
 
+  // Every node visited successfully
   return pairs;
+}
+
+point_pairs start_find_pairs(graph &g) {
+  int n = g.values.size();
+  vector<bool> visited(n);
+  fill(visited.begin(), visited.end(), false);
+  vector<int> edge_count(n);
+  for (int i = 0; i < n; ++i) {
+	edge_count[i] = g.edges[i].size();
+	if (edge_count[i] == 0) {
+	  cout << "back to the drawing board" << endl;
+	  throw non_matching_roots_exception(g);
+	}
+  }
+  return find_pairs(g, n, visited, edge_count);
 }

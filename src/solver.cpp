@@ -16,11 +16,11 @@ int main(int argc, char **argv) {
 
   cout << "GSL -----------" << endl;
   // coefficient[y] is the coefficient for x^y
-  double coefficients[degree + 1];
+  double *coefficients = new double[degree + 1];
   for (int i = 0; i < degree + 1; ++i) {
 	try {
 	  coefficients[i] = atof(argv[i + 1]);
-	} catch (logic_error e) {
+	} catch (logic_error &e) {
 	  cerr << "Unable to parse integer argument: " << argv[i] << endl;
 	  return -1;
 	}
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
   // TODO: wrap in try block in case OOM
   qr_algorithm qr(degree);
-  gsl_complex *roots = qr.solve(coefficients);
+  vector<gsl_complex> roots = qr.solve(coefficients);
   
   for (int i = 0; i < degree; ++i) {
 	cout << GSL_REAL(roots[i]) << " + " << GSL_IMAG(roots[i]) << "i" << endl;
@@ -46,5 +46,6 @@ int main(int argc, char **argv) {
 	cout << GSL_REAL(roots[i]) << " + " << GSL_IMAG(roots[i]) << "i" << endl;
   }
 
+  delete[] coefficients;
   return 0;
 }
