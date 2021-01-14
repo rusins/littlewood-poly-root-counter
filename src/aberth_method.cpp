@@ -3,6 +3,7 @@
 #include <vector>
 #include <gsl/gsl_complex.h>
 #include <mps/mps.h>
+#include <math.h>
 
 #include "poly_solver.cpp"
 
@@ -10,6 +11,7 @@ class aberth_method : public poly_solver {
 public:
   aberth_method(int degree);
   vector<gsl_complex> solve(double *coefficients);
+  vector<gsl_complex> solve(double *coefficients, double precision);
   ~aberth_method();
 
 private:
@@ -18,8 +20,8 @@ private:
   mps_monomial_poly *poly;
   cplx_t *results;
   gsl_complex *roots;
+  vector<gsl_complex> continue_solve(double *coefficients);
 };
-
 
 
 
@@ -42,8 +44,24 @@ vector<gsl_complex> aberth_method::solve(double *coefficients) {
   context = mps_context_new();
   poly = mps_monomial_poly_new(context, degree);
   mps_context_select_algorithm(context, MPS_ALGORITHM_STANDARD_MPSOLVE);
+  //  mps_context_set_output_prec(context, 12 * log2(10) + 1);
   results = cplx_valloc(degree);
   
+  return continue_solve(coefficients);
+}
+
+vector<gsl_complex> aberth_method::solve(double *coefficients, double precision) {
+  // MPSolve encounters address errors if we don't recreate the context every time
+  context = mps_context_new();
+  poly = mps_monomial_poly_new(context, degree);
+  mps_context_select_algorithm(context, MPS_ALGORITHM_STANDARD_MPSOLVE);
+  mps_context_set_output_prec(context, precision + 1);
+  results = cplx_valloc(degree);
+
+  return continue_solve(coefficients);
+}
+
+vector<gsl_complex> aberth_method::continue_solve(double *coefficients) {
   // Set the coefficients
   for (int i = 0; i < degree + 1; ++i)
 	mps_monomial_poly_set_coefficient_d(context, poly, i, coefficients[i], 0);

@@ -8,7 +8,7 @@ using namespace std;
 #define point_pairs vector< pair<gsl_complex, gsl_complex> >
 
 // Max distance between root pairs
-const double ETA = 0.01;
+const double ETA = 0.05;
 
 struct gsl_complex_ops {
   static bool compare_real(const gsl_complex &a, const gsl_complex &b) {
@@ -42,6 +42,7 @@ struct graph {
 	for (int j = 0; j < size; ++j)
 	  builder << j << ": " << gsl_complex_ops::print(values[j]) << "\n";
 	builder << "\nAll edges:\n";
+
 	for (int j = 0; j < size; j += 2)
 	  for (int z : edges[j])
 		builder << j << "-" << z << "\n";
