@@ -19,6 +19,12 @@ struct gsl_complex_ops {
 	return to_string(GSL_REAL(val)) + " " + to_string(GSL_IMAG(val)) + "i";
   }
 
+  static string print(const gsl_complex &val, const int &precision) {
+    ostringstream s;
+    s << fixed << setprecision(precision) << GSL_REAL(val) << " " << GSL_IMAG(val) << "i";
+    return s.str();
+  }
+
   static double distance(const gsl_complex &a, const gsl_complex &b) {
 	const double dr = GSL_REAL(a) - GSL_REAL(b);
 	const double di = GSL_IMAG(a) - GSL_IMAG(b);
@@ -231,4 +237,13 @@ point_pairs start_find_pairs(graph &g) {
 	}
   }
   return find_pairs(g, n, visited, edge_count);
+}
+
+vector<string> split_string(string str, char delimiter) {
+  vector<string> res;
+  stringstream stream(str);
+  string token;
+  while (getline(stream, token, delimiter))
+    res.push_back(token);
+  return res;
 }

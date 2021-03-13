@@ -34,3 +34,6 @@ build/*
 *.exe
 *.out
 *.app
+
+# Output files from running the program
+*roots.txt

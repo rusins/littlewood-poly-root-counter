@@ -7,6 +7,8 @@
 
 #include "poly_solver.cpp"
 
+const int DEFAULT_PRECISION = 12;
+
 class aberth_method : public poly_solver {
 public:
   aberth_method(int degree);
@@ -19,7 +21,6 @@ private:
   mps_context *context;
   mps_monomial_poly *poly;
   cplx_t *results;
-  gsl_complex *roots;
   vector<gsl_complex> continue_solve(double *coefficients);
 };
 
@@ -27,12 +28,11 @@ private:
 
 
 
+
 aberth_method::aberth_method(int degree_param): degree(degree_param) {
-  roots = new gsl_complex[degree];
 }
 
 aberth_method::~aberth_method() {
-  delete[] roots;
 }
 
 // Uses the Aberth method to find roots of the supplied polynomial.
@@ -41,13 +41,7 @@ aberth_method::~aberth_method() {
 // Returns array of roots of size degree, which gets deleted on deconstruction
 vector<gsl_complex> aberth_method::solve(double *coefficients) {
   // MPSolve encounters address errors if we don't recreate the context every time
-  context = mps_context_new();
-  poly = mps_monomial_poly_new(context, degree);
-  mps_context_select_algorithm(context, MPS_ALGORITHM_STANDARD_MPSOLVE);
-  //  mps_context_set_output_prec(context, 12 * log2(10) + 1);
-  results = cplx_valloc(degree);
-  
-  return continue_solve(coefficients);
+  return solve(coefficients, DEFAULT_PRECISION * log2(10));
 }
 
 vector<gsl_complex> aberth_method::solve(double *coefficients, double precision) {
@@ -57,11 +51,7 @@ vector<gsl_complex> aberth_method::solve(double *coefficients, double precision)
   mps_context_select_algorithm(context, MPS_ALGORITHM_STANDARD_MPSOLVE);
   mps_context_set_output_prec(context, precision + 1);
   results = cplx_valloc(degree);
-
-  return continue_solve(coefficients);
-}
-
-vector<gsl_complex> aberth_method::continue_solve(double *coefficients) {
+  
   // Set the coefficients
   for (int i = 0; i < degree + 1; ++i)
 	mps_monomial_poly_set_coefficient_d(context, poly, i, coefficients[i], 0);
@@ -75,12 +65,14 @@ vector<gsl_complex> aberth_method::continue_solve(double *coefficients) {
   // Save roots computed in the vector results
   mps_context_get_roots_d(context, &results, NULL);
 
+  vector<gsl_complex> roots(degree);
   for (int i = 0; i < degree; ++i)
 	GSL_SET_COMPLEX(&roots[i], cplx_Re(results[i]), cplx_Im(results[i]));
 
   mps_monomial_poly_free(context, MPS_POLYNOMIAL(poly));
   mps_context_free(context);
-  free(results);
+  cplx_vfree(results);
   
-  return vector<gsl_complex>(roots, roots + degree);
+  //  return vector<gsl_complex>(roots, roots + degree);
+  return roots;
 }
