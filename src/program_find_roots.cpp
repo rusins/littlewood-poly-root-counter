@@ -48,7 +48,6 @@ public:
   }
 
   void add_result(double *coefficients, const vector<gsl_complex> &roots) {
-    lock_guard<mutex> LOCK(mtx); // Unlocked automatically at end of scope
 
     file << "# " << print_coefficients(coefficients, degree) << "\n";
     for (int i = 0; i < degree; ++i)

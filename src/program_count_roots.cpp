@@ -1,5 +1,7 @@
-+#include <bits/stdc++.h>
+#include <bits/stdc++.h>
 #include <gsl/gsl_complex.h>
+#include <optional>
+#include <thread>
 
 #include "utils.cpp"
 #include "cxxopts.hpp"
@@ -8,8 +10,10 @@ using namespace std;
 
 const int PRECISION = 12;
 
+int thread_degree;
+
 optional<gsl_complex> parse_root(const string line) {
-  vector<string> parts = split_string(degree_string, ' ');
+  vector<string> parts = split_string(line, ' ');
   if (parts.size() != 2)
     return {};
   // Cut off 'i'
@@ -23,8 +27,7 @@ optional<gsl_complex> parse_root(const string line) {
   } catch (invalid_argument) {
     return {};
   }
-  gsl_complex root;
-  GSL_SET_COMPLEX(&root, real, imag);
+  gsl_complex root = {real, imag};
   return root;
 }
 
@@ -38,7 +41,7 @@ string read_line(ifstream &file) {
     if (file.eof())
       return "";
     else
-      s = getline(file, s);
+      getline(file, s);
   }
   return s;
 }
@@ -60,12 +63,22 @@ optional<gsl_complex> read_root(ifstream &file) {
   return root;
 }
 
-void run_program(pair<int, int> degree_range, int iterations, gsl_complex center, double radius) {
-  for (int degree = degree_range.first; degree <= degree_range.second; ++degree) {
-    ifstream file;
+void output_result(int degree, long long in_area_count, long long root_count) {
+  while (thread_degree < degree)
+    this_thread::sleep_for(chrono::milliseconds(100));
+  //        cout << "Degree " << degree << " had " << in_area_count << " roots in area out of " << root_count << " total roots" << endl;
+  cout << fixed << setprecision(12) << degree << " " << (in_area_count * degree * 1.0) / root_count << endl;
+  thread_degree++;
+}
+
+void run_program(pair<int, int> degree_range, int step, int iterations) {
+  for (int degree = degree_range.first; degree <= degree_range.second; degree += step) {
     string file_name = to_string(degree) + "-roots.txt";
+    // TODO: make these values programmable via cmd line parameters
+    gsl_complex center = {1.0, 0.0};
+    double radius = 1.0 / pow(degree, 1.0/100);
     try {
-      file = ifstream(filename, ios::in);
+      ifstream file = ifstream(file_name, ios::in);
       try {
         long long root_count = 0;
         long long in_area_count = 0;
@@ -73,18 +86,18 @@ void run_program(pair<int, int> degree_range, int iterations, gsl_complex center
         while (root.has_value()) {
           root_count++;
           // edit this
-          double dist = gsl_complex_ops::distance(root, center);
-          const double PRECISION_DIST = 1.0 / pow(2, PRECISION);
-          if (dist - PRECISION_DIST < radius)
+          double dist = gsl_complex_ops::distance(root.value(), center);
+          // const double PRECISION_DIST = 1.0 / pow(2, PRECISION);
+          if (dist < radius)
             in_area_count++;
+          
+          root = read_root(file);
         }
-        cout << "Degree " << degree << " had " << in_area_count << " roots in area out of " << root_count << " total roots" << endl;
+        output_result(degree, in_area_count, root_count);
+        file.close(); // possibly not needed
       }
       catch (ifstream::failure &e) {
         cerr << "Something went wrong while reading the file " << file_name << endl;
-      }
-      finally {
-        file.close();
       }
     } catch (ifstream::failure &e) {
       cerr << "Error: file " << file_name << " not found!" << endl;
@@ -106,6 +119,7 @@ int main(int argc, char **argv) {
     ("a,all", "Iterate through all polynomials in the file", cxxopts::value<bool>()->default_value("false"))
     ("i,iterations", "Number of polynomials (if present) to read from the file.", cxxopts::value<int>()->default_value("10000"))
     ("c,center", "Center of the disk to count roots in")
+    ("t,threads", "Number of threads to count roots with.", cxxopts::value<int>()->default_value("1"))
     ("h,help", "Print usage")
     ;
 
@@ -150,7 +164,21 @@ int main(int argc, char **argv) {
       iterations = result["iterations"].as<int>();
     }
 
-    run_program(degree_range, iterations);
+    // Read thread count
+    int thread_count = result["threads"].as<int>();
+    thread_degree = degree_range.first;
+
+    if (thread_count == 1)
+      run_program(degree_range, 1, iterations);
+    else {
+      vector<thread> threads(thread_count);
+      for (int i = 0; i < thread_count; ++i) {
+        threads[i] = thread(run_program, make_pair(degree_range.first + i, degree_range.second), thread_count, iterations);
+      }
+      for (int i = 0; i < thread_count; ++i) {
+        threads[i].join();
+      }
+    }
     
   } catch (cxxopts::OptionParseException &e) {
     option_parse_fail(options, e.what());
