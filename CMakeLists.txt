@@ -4,8 +4,8 @@ project("Littlewood Poly Root Plotter" VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 
 # Uncomment to enable memory leak and uninitialized data access detection
-add_compile_options(-fsanitize=address,undefined -Wall -Wextra -Wshadow -Wpedantic)
-add_link_options(-fsanitize=address,undefined)
+#add_compile_options(-fsanitize=address,undefined -Wall -Wextra -Wshadow -Wpedantic)
+#add_link_options(-fsanitize=address,undefined)
 
 add_executable(LPRP src/main.cpp)
 add_executable(solver src/program_solver.cpp)

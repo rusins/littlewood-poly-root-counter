@@ -2,6 +2,7 @@
 #include <gsl/gsl_complex.h>
 #include <thread>
 #include <mutex>
+#include <math.h>
 
 #include "qr_algorithm.cpp"
 #include "aberth_method.cpp"
@@ -9,8 +10,6 @@
 #include "cxxopts.hpp"
 
 using namespace std;
-
-const int PRECISION = 12;
 
 string print_coefficients(double *coefficients, int degree) {
   ostringstream builder;
@@ -34,12 +33,13 @@ private:
   int degree;
   long count = 0;
   long total;
+  int precision;
   mutex mtx; // Mutex for writing to the file and incrementing the count
   time_t last_update_time = time(NULL);
 public:
   ofstream file;
   
-  sync_obj(int degree_param, long total_param, string file_name): degree(degree_param), total(total_param) {
+  sync_obj(int degree_param, long total_param, string file_name, int precision_param): degree(degree_param), total(total_param), precision(precision_param) {
     file = ofstream(file_name, ios::trunc);
   }
 
@@ -51,7 +51,7 @@ public:
 
     file << "# " << print_coefficients(coefficients, degree) << "\n";
     for (int i = 0; i < degree; ++i)
-      file << gsl_complex_ops::print(roots[i], PRECISION) << "\n";
+      file << gsl_complex_ops::print(roots[i], precision) << "\n";
 
     count++;
     
@@ -67,8 +67,8 @@ public:
   }
 };
 
-void solve_and_print(int degree, double *coefficients, aberth_method &ab, qr_algorithm &qr, sync_obj *&sync) {
-  auto roots_ab = ab.solve(coefficients);
+void solve_and_print(int degree, double *coefficients, aberth_method &ab, qr_algorithm &qr, sync_obj *&sync, const int precision) {
+  auto roots_ab = ab.solve(coefficients, precision * log2(10));
   auto roots_qr = qr.solve(coefficients);
 
   bool skip_polynomial = false;
@@ -88,7 +88,7 @@ void solve_and_print(int degree, double *coefficients, aberth_method &ab, qr_alg
   }
 }
 
-void run_thread_rand(const int degree, const int iterations, sync_obj *sync) {
+void run_thread_rand(const int degree, const int iterations, sync_obj *sync, const int precision) {
   double *coefficients = new double[degree + 1];
   aberth_method ab(degree);
   qr_algorithm qr(degree);
@@ -96,12 +96,12 @@ void run_thread_rand(const int degree, const int iterations, sync_obj *sync) {
     for (int i = 0; i < degree + 1; ++i) {
       coefficients[i] = (rand() % 2) * 2 - 1;
     }
-    solve_and_print(degree, coefficients, ab, qr, sync);
+    solve_and_print(degree, coefficients, ab, qr, sync, precision);
   }
   delete[] coefficients;
 }
 
-void run_thread_iter(const int degree, const long start, const long step, const long end, sync_obj *sync) {
+void run_thread_iter(const int degree, const long start, const long step, const long end, sync_obj *sync, const int precision) {
   double *coefficients = new double[degree + 1];
   aberth_method ab(degree);
   qr_algorithm qr(degree);
@@ -111,12 +111,12 @@ void run_thread_iter(const int degree, const long start, const long step, const 
     for (int i = 0; i < degree + 1; ++i) {
       coefficients[i] = ((iter >> i) % 2) * 2 - 1;
     }
-    solve_and_print(degree, coefficients, ab, qr, sync);
+    solve_and_print(degree, coefficients, ab, qr, sync, precision);
   }
   delete[] coefficients;
 }
 
-void run_program(const pair<int, int> degree_range, long iterations, const int thread_count) {
+void run_program(const pair<int, int> degree_range, long iterations, const int thread_count, const int precision) {
   bool random = iterations != 0;
   
   for (int degree = degree_range.first; degree <= degree_range.second; ++degree) {
@@ -125,12 +125,12 @@ void run_program(const pair<int, int> degree_range, long iterations, const int t
       iterations = 1L << (degree + 1);
     vector<thread> threads(thread_count);
     
-    sync_obj sync(degree, iterations, to_string(degree) + "-roots.txt"); // Mutex around file and processed poly count
+    sync_obj sync(degree, iterations, to_string(degree) + "-roots.txt", precision); // Mutex around file and processed poly count
     if (!random) {
       sync.file << "# Roots of all Littlewood polynomials of degree " << degree << "\n";
       for (int i = 0; i < thread_count; ++i) {
         //threads[i] = thread(run_thread_iter, degree, i, thread_count, iterations, &sync);
-        run_thread_iter(degree, i, thread_count, iterations, &sync);
+        run_thread_iter(degree, i, thread_count, iterations, &sync, precision);
       }
     } else {
       sync.file << "# Roots of " << iterations << " randomly generated Littlewood polynomials of degree " << degree << "\n";
@@ -142,7 +142,7 @@ void run_program(const pair<int, int> degree_range, long iterations, const int t
         if (rem-- > 0)
           share++;
         //threads[i] = thread(run_thread_rand, degree, share, &sync);
-        run_thread_rand(degree, share, &sync);
+        run_thread_rand(degree, share, &sync, precision);
       }
     }
 
@@ -167,6 +167,7 @@ int main(int argc, char **argv) {
     ("a,all", "Iterate through all possible polynomials", cxxopts::value<bool>()->default_value("false"))
     ("i,iterations", "Number of polynomials to solve per degree.", cxxopts::value<int>()->default_value("10000"))
     ("t,threads", "Number of threads to solve polynomials with.", cxxopts::value<int>()->default_value("1"))
+    ("p,precision", "Number of decimal places for the floating point values.", cxxopts::value<int>()->default_value("12"))
     ("h,help", "Print usage")
     ;
 
@@ -216,8 +217,10 @@ int main(int argc, char **argv) {
     if (thread_count <= 0) {
       option_parse_fail(options, "Thread count must be greater than or equal to 1!");
     }
+    // Read precision
+    int precision = result["precision"].as<int>();
 
-    run_program(degree_range, iterations, thread_count);
+    run_program(degree_range, iterations, thread_count, precision);
     
   } catch (cxxopts::OptionParseException &e) {
     option_parse_fail(options, e.what());

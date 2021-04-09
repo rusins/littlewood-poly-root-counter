@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const int PRECISION = 12;
+//const int PRECISION = 12;
 
 int thread_degree;
 
@@ -76,7 +76,7 @@ void run_program(pair<int, int> degree_range, int step, int iterations) {
     string file_name = to_string(degree) + "-roots.txt";
     // TODO: make these values programmable via cmd line parameters
     gsl_complex center = {1.0, 0.0};
-    double radius = 1.0 / pow(degree, 1.0/100);
+    double radius = 1.0 / pow(degree, 1.1);
     try {
       ifstream file = ifstream(file_name, ios::in);
       try {
