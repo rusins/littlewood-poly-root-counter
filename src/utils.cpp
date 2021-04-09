@@ -152,7 +152,7 @@ point_pairs find_pairs(graph &g, int n, vector<bool> visited, vector<int> edge_c
 
 	if (visited[node]) continue;
 	if (edge_count[node] == 0) {
-	  cout << "wot" << endl;
+	  cerr << "node without edges" << endl;
 	  throw non_matching_roots_exception(g);
 	}
 	// From this point onward we know edge_count[node] = 1
@@ -166,7 +166,7 @@ point_pairs find_pairs(graph &g, int n, vector<bool> visited, vector<int> edge_c
 	}
 
 	if (edge_count[other] == 0){
-	  cout << "fuck" << endl;
+	  cerr << "inconsistent edges between nodes" << endl;
 	  throw non_matching_roots_exception(g);
 	}
 
@@ -193,7 +193,7 @@ point_pairs find_pairs(graph &g, int n, vector<bool> visited, vector<int> edge_c
 	  continue;
 	visited[node] = true;
 	if (edge_count[node] == 0) {
-	  cout << "ugh oh" << endl;
+      cerr << "Node without a match" << endl;
 	  throw non_matching_roots_exception(g);
 	}
 	
@@ -216,7 +216,7 @@ point_pairs find_pairs(graph &g, int n, vector<bool> visited, vector<int> edge_c
 		continue; // This wasn't it chief
 	  }
 	}
-	cout << "Failed to create a graph by matching root " << node << endl;
+	cerr << "Failed to create a graph by matching root " << node << endl;
 	throw new non_matching_roots_exception(g);
   }
 
@@ -232,7 +232,7 @@ point_pairs start_find_pairs(graph &g) {
   for (int i = 0; i < n; ++i) {
 	edge_count[i] = g.edges[i].size();
 	if (edge_count[i] == 0) {
-	  cout << "back to the drawing board" << endl;
+	  cerr << "Root without any matches!" << endl;
 	  throw non_matching_roots_exception(g);
 	}
   }
