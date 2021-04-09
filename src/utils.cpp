@@ -81,11 +81,9 @@ graph build_graph(vector<gsl_complex> roots_a, vector<gsl_complex> roots_b) {
   // 2 pointer iteration through the arrays.
   // Worst case O(n^2), but should be closer to O(n) in practice
   int a = 0;
-  double max_dist = 0.0;
   for (int b = 0; a < n && b < n; ++b) {
 	const double real_b = GSL_REAL(roots_b[b]);
-	double min_dist = 20.0;
-	
+    
 	for (int aa = a; aa < n; ++aa) {
 	  const double real_a = GSL_REAL(roots_a[aa]);
 	  if (real_a < real_b - ETA) {
@@ -95,8 +93,6 @@ graph build_graph(vector<gsl_complex> roots_a, vector<gsl_complex> roots_b) {
 	  } else {
 		const double dist = gsl_complex_ops::distance(roots_a[aa], roots_b[b]);
 		if (dist <= ETA) {
-		  if (dist < min_dist)
-			min_dist = dist;
 		  // Add edge to graph
 		  const int a_node = aa * 2;
 		  const int b_node = b * 2 + 1;
@@ -105,12 +101,8 @@ graph build_graph(vector<gsl_complex> roots_a, vector<gsl_complex> roots_b) {
 		}
 	  }
 	}
-	if (min_dist > max_dist)
-	  max_dist = min_dist;	
   }
 
-  if (max_dist > 0.001)
-	cout << max_dist << endl;
 
   return g;
 }
