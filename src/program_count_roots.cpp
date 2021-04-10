@@ -71,21 +71,24 @@ void output_result(int degree, long long in_area_count, long long root_count) {
   thread_degree++;
 }
 
-void run_program(pair<int, int> degree_range, int step, int iterations) {
+void run_program(pair<int, int> degree_range, int step, int iterations, const double exponent) {
   for (int degree = degree_range.first; degree <= degree_range.second; degree += step) {
     string file_name = to_string(degree) + "-roots.txt";
     // TODO: make these values programmable via cmd line parameters
     gsl_complex center = {1.0, 0.0};
-    double radius = 1.0 / pow(degree, 1.1);
+    double radius = 1.0 / pow(degree, exponent);
     try {
       ifstream file = ifstream(file_name, ios::in);
+      if (file.fail()) {
+        cerr << "Error: file " << file_name << " not found!" << endl;
+        continue;
+      }
       try {
         long long root_count = 0;
         long long in_area_count = 0;
         optional<gsl_complex> root = read_root(file);
         while (root.has_value()) {
           root_count++;
-          // edit this
           double dist = gsl_complex_ops::distance(root.value(), center);
           // const double PRECISION_DIST = 1.0 / pow(2, PRECISION);
           if (dist < radius)
@@ -118,7 +121,7 @@ int main(int argc, char **argv) {
     ("d,degree", "Degree to use for opening the polynomial file for counting the roots of. A range of degrees can be given by separating the start and end with a dash, e.g. 2-12", cxxopts::value<string>())
     ("a,all", "Iterate through all polynomials in the file", cxxopts::value<bool>()->default_value("false"))
     ("i,iterations", "Number of polynomials (if present) to read from the file.", cxxopts::value<int>()->default_value("10000"))
-    ("c,center", "Center of the disk to count roots in")
+    ("e,exponent", "Exponent for the degree when the disk radius is 1/d^e", cxxopts::value<double>()->default_value("1.0"))
     ("t,threads", "Number of threads to count roots with.", cxxopts::value<int>()->default_value("1"))
     ("h,help", "Print usage")
     ;
@@ -168,12 +171,15 @@ int main(int argc, char **argv) {
     int thread_count = result["threads"].as<int>();
     thread_degree = degree_range.first;
 
+    // Read exponent count
+    double exponent = result["exponent"].as<double>();
+
     if (thread_count == 1)
-      run_program(degree_range, 1, iterations);
+      run_program(degree_range, 1, iterations, exponent);
     else {
       vector<thread> threads(thread_count);
       for (int i = 0; i < thread_count; ++i) {
-        threads[i] = thread(run_program, make_pair(degree_range.first + i, degree_range.second), thread_count, iterations);
+        threads[i] = thread(run_program, make_pair(degree_range.first + i, degree_range.second), thread_count, iterations, exponent);
       }
       for (int i = 0; i < thread_count; ++i) {
         threads[i].join();
