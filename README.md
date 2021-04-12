@@ -28,7 +28,7 @@ After building you will have a number of executables in the `build` directory.
 
     For example, running the program by executing
     `./count-roots -d 1-10 -a -e 0.5 -t 8`
-    will read all the roots in the files for degrees 1 to 10, and count how many roots are within the disk of radius 1/sqrt(n). And it will use 8 worker threads to do so. To save this output to a file, simply pipe it:
+    will read all the roots in the files for degrees 1 to 10, and count how many roots are within the disk of radius 1/sqrt(n) centered at +1. And it will use 8 worker threads to do so. To save this output to a file, simply pipe it:
     `./count-roots -d 1-10 -a -e -0.5 -t 8 > count.dat`
 
 - `count-ones` is a program that counts the multiplicities of +1 as a root for random Littlewood polynomials. For each degree n, it outputs a line with n numbers: the probability of +1 being a root of that multiplicity.
