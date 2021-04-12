@@ -22,7 +22,7 @@ After building you will have a number of executables in the `build` directory.
 
     For example, running the program by executing
     `./find-roots -d 1-10 -a`
-    will produce 10 output files in the current working directory, named `n-roots.txt`, where n is the degree. Each file starts with a comment stating how many polynomials the file contains, followed by a comment line with each polynomials coefficients, and then x lines with the roots of the polynomial. The `-a` option specifies that all possible polynomials of each degree should be iterated through. A specific number of iterations can be specified by using the parameter `-i`.
+    will produce 10 output files in the current working directory, named `n-roots.txt`, where n is the degree. Each file starts with a comment stating how many polynomials the file contains, followed by a comment line with each polynomials coefficients, and then n lines with the roots of the polynomial. The `-a` option specifies that all possible polynomials of each degree should be iterated through. A specific number of iterations can be specified by using the parameter `-i`.
 
 - `count-roots` is a program that reads roots from the root files in the current working directory, and counts how many of them are within a disk of radius 1/n^e centered at +1, and outputs the average number (count / polynomials) to standard output. The root files must be named `n-roots.txt`, where n is the degree of the polynomial.
 
