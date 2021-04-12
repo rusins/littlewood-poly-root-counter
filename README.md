@@ -5,6 +5,14 @@ A tool to find and count the roots of randomly generated Littlewood polynomials
 ### Dependencies
 You should install the build tool CMake, as well as the libraries GSL and MPSolve. GTest (and GMock) is required for unit testing, but you can edit CMakeLists.txt to disable unit tests if you lack it.
 
+cxxopts is also required, and we include it as a git submodule. To fetch it, run
+`git submodule init`
+and
+`git submodule update`
+
+Otherwise, just clone the cxxopts repository in the `submodules` directory.
+    
+
 ### Build steps
 Then execute the following commands from the top-level project directory:
 
